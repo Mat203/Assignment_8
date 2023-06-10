@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "Eqq6h/wUUppj20dUAnjNPeA/KsiNU5xkjo4BCh8zjdkz/PasAENtpwfRcVPQVgE4mQNamIKhlPhS4oIfW/rVKg==",
+  "dgSpecHash": "yz10QsCPD7uCyjT6fYJuOEn4mk9IFXsxvX987L/8zZ3Ly9HJiYXtG3/llJIpDL9UCF50QlxfweocqF1NyVH56w==",
   "success": true,
-  "projectFilePath": "C:\\Users\\sofma\\Assignment_8.1\\assignment_8\\assignment_8.csproj",
+  "projectFilePath": "C:\\Users\\sofma\\Assignment_8.2\\assignment_8\\assignment_8.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\sofma\\.nuget\\packages\\csvhelper\\18.0.0\\csvhelper.18.0.0.nupkg.sha512",
     "C:\\Users\\sofma\\.nuget\\packages\\microsoft.csharp\\4.5.0\\microsoft.csharp.4.5.0.nupkg.sha512"

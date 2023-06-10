@@ -1,0 +1,17 @@
+C:\Users\sofma\Assignment_8.2\assignment_8\bin\Debug\net7.0\assignment_8.exe
+C:\Users\sofma\Assignment_8.2\assignment_8\bin\Debug\net7.0\assignment_8.deps.json
+C:\Users\sofma\Assignment_8.2\assignment_8\bin\Debug\net7.0\assignment_8.runtimeconfig.json
+C:\Users\sofma\Assignment_8.2\assignment_8\bin\Debug\net7.0\assignment_8.dll
+C:\Users\sofma\Assignment_8.2\assignment_8\bin\Debug\net7.0\assignment_8.pdb
+C:\Users\sofma\Assignment_8.2\assignment_8\bin\Debug\net7.0\CsvHelper.dll
+C:\Users\sofma\Assignment_8.2\assignment_8\obj\Debug\net7.0\assignment_8.csproj.AssemblyReference.cache
+C:\Users\sofma\Assignment_8.2\assignment_8\obj\Debug\net7.0\assignment_8.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\sofma\Assignment_8.2\assignment_8\obj\Debug\net7.0\assignment_8.AssemblyInfoInputs.cache
+C:\Users\sofma\Assignment_8.2\assignment_8\obj\Debug\net7.0\assignment_8.AssemblyInfo.cs
+C:\Users\sofma\Assignment_8.2\assignment_8\obj\Debug\net7.0\assignment_8.csproj.CoreCompileInputs.cache
+C:\Users\sofma\Assignment_8.2\assignment_8\obj\Debug\net7.0\assignment_8.csproj.CopyComplete
+C:\Users\sofma\Assignment_8.2\assignment_8\obj\Debug\net7.0\assignment_8.dll
+C:\Users\sofma\Assignment_8.2\assignment_8\obj\Debug\net7.0\refint\assignment_8.dll
+C:\Users\sofma\Assignment_8.2\assignment_8\obj\Debug\net7.0\assignment_8.pdb
+C:\Users\sofma\Assignment_8.2\assignment_8\obj\Debug\net7.0\assignment_8.genruntimeconfig.cache
+C:\Users\sofma\Assignment_8.2\assignment_8\obj\Debug\net7.0\ref\assignment_8.dll
