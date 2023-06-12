@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\sofma\\Assignment_8.2\\assignment_8\\assignment_8.csproj": {}
+    "C:\\Users\\User\\Desktop\\Информатика\\Assignment_8\\assignment_8\\assignment_8.csproj": {}
   },
   "projects": {
-    "C:\\Users\\sofma\\Assignment_8.2\\assignment_8\\assignment_8.csproj": {
+    "C:\\Users\\User\\Desktop\\Информатика\\Assignment_8\\assignment_8\\assignment_8.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\sofma\\Assignment_8.2\\assignment_8\\assignment_8.csproj",
+        "projectUniqueName": "C:\\Users\\User\\Desktop\\Информатика\\Assignment_8\\assignment_8\\assignment_8.csproj",
         "projectName": "assignment_8",
-        "projectPath": "C:\\Users\\sofma\\Assignment_8.2\\assignment_8\\assignment_8.csproj",
-        "packagesPath": "C:\\Users\\sofma\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\sofma\\Assignment_8.2\\assignment_8\\obj\\",
+        "projectPath": "C:\\Users\\User\\Desktop\\Информатика\\Assignment_8\\assignment_8\\assignment_8.csproj",
+        "packagesPath": "C:\\Users\\User\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\User\\Desktop\\Информатика\\Assignment_8\\assignment_8\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\sofma\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "C:\\Users\\User\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net7.0"
