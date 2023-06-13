@@ -94,6 +94,51 @@ Dictionary<string, double[]> GetUserPreferences(List<UserRating> userRatings, Li
     return userPreferences;
 }
 
+void CompareUsers(Dictionary<string, double[]> new_UserPreferences, Dictionary<string, double[]> UserPreferences)
+{
+    var newUser = new_UserPreferences.Single();
+
+    int matchCount = 0;
+
+    foreach (var existingUser in UserPreferences)
+    {
+        bool isMatch = true;
+
+        for (int i = 0; i < newUser.Value.Length; i++)
+        {
+            if (Math.Abs(newUser.Value[i] - existingUser.Value[i]) >= 0.25)
+            {
+                isMatch = false;
+                break;
+            }
+        }
+
+        if (isMatch)
+        {
+            Console.WriteLine("Matching user:");
+            Console.WriteLine("User ID: " + existingUser.Key);
+            Console.WriteLine("Preferences: [" + string.Join(", ", existingUser.Value) + "]");
+            Console.WriteLine();
+            matchCount++;
+
+            if (matchCount == 3)
+                break;
+        }
+    }
+}
+
+string GetFavoriteGenre(Dictionary<string, int> genreCounts)
+{
+    int maxCount = genreCounts.Values.Max();
+
+    var favoriteGenres = genreCounts.Where(kv => kv.Value == maxCount).Select(kv => kv.Key).ToList();
+
+    favoriteGenres.Sort();
+    return favoriteGenres.First();
+}
+
+
+
 var m = GetMovie("movie_data.csv");
 var listMovies = ArrangeMovies(m);
 var userRatings = GetUserRatings("rating.csv");
@@ -112,6 +157,8 @@ void Recommend()
 {
     List<UserRating> new_user = new List<UserRating>();
     int count = 0;
+    var genreCounts = new Dictionary<string, int>(); // Хранит количество просмотренных фильмов каждого жанра
+
     while (true)
     {
         Console.Write("> ");
@@ -123,6 +170,10 @@ void Recommend()
             {
                 Console.WriteLine(userId + ": [" + string.Join(", ", new_userPreferences[userId]) + "]");
             }
+            CompareUsers(new_userPreferences, userPreferences);
+            var favoriteGenre = GetFavoriteGenre(genreCounts);
+            Console.WriteLine("Your favorite genre is: " + favoriteGenre);
+
             break;
         }
         else
@@ -162,12 +213,22 @@ void Recommend()
 
                     count++;
                     Console.WriteLine(count);
+
+                    var movieGenre = listMovies.Find(m => m.movie_id == movieId)?.genres;
+                    if (movieGenre != null && genreCounts.ContainsKey(movieGenre))
+                    {
+                        genreCounts[movieGenre]++;
+                    }
+                    else
+                    {
+                        genreCounts[movieGenre] = 1;
+                    }
                 }
             }
         }
-
     }
 }
+
 
 void spellChecker(string movieTitle)
 {
