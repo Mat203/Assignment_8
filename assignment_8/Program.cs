@@ -2,7 +2,7 @@ using System.Globalization;
 using CsvHelper;
 using System.Linq;
 
-List<Movie> GetMovie(string fileName)
+List<Movie> GetMovies(string fileName)
 {
     using (var reader = new StreamReader(fileName))
     using (var csv = new CsvReader(reader, CultureInfo.InvariantCulture))
@@ -137,12 +137,34 @@ string GetFavoriteGenre(Dictionary<string, int> genreCounts)
     return favoriteGenres.First();
 }
 
+Dictionary<string, List<Movie>> BestFromEachGenre(List<Movie> listM)
+{
+    var genres = new List<string>{"Drama", "Comedy", "Documentary", "Fiction", "Action",
+        "Romance", "Animation", "Thriller"};
+    var dictOfBest = new Dictionary<string, List<Movie>>();
+
+    foreach (var g in genres)
+    {
+        var listGenre = new List<Movie>();
+        foreach (var m in listM)
+        {
+            if (m.genres.Contains(g))
+            {
+                listGenre.Add(m);
+            }
+        }
+        var bestInGenre = listGenre.OrderBy(movie => Convert.ToDouble(movie.vote_average)).Take(2).ToList();
+        dictOfBest[g] = bestInGenre;
+    }
+    return dictOfBest;
+}
 
 
-var m = GetMovie("movie_data.csv");
-var listMovies = ArrangeMovies(m);
+var listMovies = ArrangeMovies(GetMovies("movie_data.csv"));
 var userRatings = GetUserRatings("rating.csv");
 var userPreferences = GetUserPreferences(userRatings, listMovies);
+var dictOfBests = BestFromEachGenre(listMovies);
+
 
 foreach (var userId in userPreferences.Keys)
 {
@@ -155,10 +177,13 @@ Recommend();
 
 void Recommend()
 {
+    var genres = new List<string>{"Drama", "Comedy", "Documentary", "Fiction", "Action",
+        "Romance", "Animation", "Thriller"};
     List<UserRating> new_user = new List<UserRating>();
     int count = 0;
     var genreCounts = new Dictionary<string, int>(); // Хранит количество просмотренных фильмов каждого жанра
-
+    foreach (var g in genres) genreCounts[g] = 0;
+    
     while (true)
     {
         Console.Write("> ");
@@ -176,6 +201,35 @@ void Recommend()
 
             break;
         }
+        
+        // discovery 
+        else if (input == "discovery")
+        {
+            foreach (var g in dictOfBests.Keys)
+            {
+                foreach (var movie in dictOfBests[g])
+                {
+                    Console.WriteLine($"have you seen '{movie.movie_title}'? (yes/no)");
+                    var answer = Console.ReadLine();
+                    if (answer == "yes")
+                    {
+                        Console.WriteLine("how would you rate it?");
+                        var rate = Convert.ToDouble(Console.ReadLine());
+                        var newRating = new UserRating()
+                        {
+                            movie_id = movie.movie_id,
+                            _id = "0",
+                            rating_val = (int)rate,
+                            user_id = "user123"
+                        };
+                        new_user.Add(newRating);
+                        genreCounts[g]++;
+                        count++;
+                    }
+                }
+            }
+        }
+        
         else
         {
             var splitted = input.Split(' ');
@@ -215,14 +269,7 @@ void Recommend()
                     Console.WriteLine(count);
 
                     var movieGenre = listMovies.Find(m => m.movie_id == movieId)?.genres;
-                    if (movieGenre != null && genreCounts.ContainsKey(movieGenre))
-                    {
-                        genreCounts[movieGenre]++;
-                    }
-                    else
-                    {
-                        genreCounts[movieGenre] = 1;
-                    }
+                    genreCounts[movieGenre]++;
                 }
             }
         }
@@ -284,6 +331,7 @@ public class Movie
     public string genres { get; set; }
     public string movie_title { get; set; }
     public string movie_id { get; set; }
+    public string vote_average { get; set; }
 }
 
 public class UserRating
