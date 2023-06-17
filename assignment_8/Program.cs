@@ -1,6 +1,5 @@
 using System.Globalization;
 using CsvHelper;
-using System.Linq;
 
 List<Movie> GetMovies(string fileName)
 {
@@ -64,6 +63,7 @@ Dictionary<string, double[]> GetUserPreferences(List<UserRating> userRatings, Li
 
     var userPreferences = new Dictionary<string, double[]>();
     var userSum = new Dictionary<string, double>();
+    var userCount = new Dictionary<string, int[]>();
 
     foreach (var userRating in userRatings)
     {
@@ -71,14 +71,17 @@ Dictionary<string, double[]> GetUserPreferences(List<UserRating> userRatings, Li
         {
             userPreferences[userRating.user_id] = new double[8];
             userSum[userRating.user_id] = 0;
+            userCount[userRating.user_id] = new int[8];
         }
 
         var movieGenre = listMovies.Find(m => m.movie_id == userRating.movie_id)?.genres;
 
         if (movieGenre != null && gen.Contains(movieGenre))
         {
-            userPreferences[userRating.user_id][gen.IndexOf(movieGenre)] += userRating.rating_val;
+            int genreIndex = gen.IndexOf(movieGenre);
+            userPreferences[userRating.user_id][genreIndex] += userRating.rating_val;
             userSum[userRating.user_id] += userRating.rating_val;
+            userCount[userRating.user_id][genreIndex]++;
         }
     }
 
@@ -86,13 +89,19 @@ Dictionary<string, double[]> GetUserPreferences(List<UserRating> userRatings, Li
     {
         for (int i = 0; i < 8; i++)
         {
-            userPreferences[userId][i] /= userSum[userId];
+            double countCoefficient = 1;
+            if (userCount[userId][i] > 0)
+            {
+                countCoefficient = Math.Log(userCount[userId][i]) + 1;
+            }
+            userPreferences[userId][i] /= (userSum[userId] * countCoefficient);
             userPreferences[userId][i] = Math.Round(userPreferences[userId][i], 5);
         }
     }
 
     return userPreferences;
 }
+
 
 void CompareUsers(Dictionary<string, double[]> new_UserPreferences, Dictionary<string, double[]> UserPreferences)
 {
@@ -137,33 +146,12 @@ string GetFavoriteGenre(Dictionary<string, int> genreCounts)
     return favoriteGenres.First();
 }
 
-Dictionary<string, List<Movie>> BestFromEachGenre(List<Movie> listM)
-{
-    var genres = new List<string>{"Drama", "Comedy", "Documentary", "Fiction", "Action",
-        "Romance", "Animation", "Thriller"};
-    var dictOfBest = new Dictionary<string, List<Movie>>();
 
-    foreach (var g in genres)
-    {
-        var listGenre = new List<Movie>();
-        foreach (var m in listM)
-        {
-            if (m.genres.Contains(g))
-            {
-                listGenre.Add(m);
-            }
-        }
-        var bestInGenre = listGenre.OrderBy(movie => Convert.ToDouble(movie.vote_average)).Take(2).ToList();
-        dictOfBest[g] = bestInGenre;
-    }
-    return dictOfBest;
-}
 
 
 var listMovies = ArrangeMovies(GetMovies("movie_data.csv"));
 var userRatings = GetUserRatings("rating.csv");
 var userPreferences = GetUserPreferences(userRatings, listMovies);
-var dictOfBests = BestFromEachGenre(listMovies);
 
 
 foreach (var userId in userPreferences.Keys)
@@ -181,9 +169,9 @@ void Recommend()
         "Romance", "Animation", "Thriller"};
     List<UserRating> new_user = new List<UserRating>();
     int count = 0;
-    var genreCounts = new Dictionary<string, int>(); // Хранит количество просмотренных фильмов каждого жанра
+    var genreCounts = new Dictionary<string, int>();
     foreach (var g in genres) genreCounts[g] = 0;
-    
+
     while (true)
     {
         Console.Write("> ");
@@ -201,35 +189,7 @@ void Recommend()
 
             break;
         }
-        
-        // discovery 
-        else if (input == "discovery")
-        {
-            foreach (var g in dictOfBests.Keys)
-            {
-                foreach (var movie in dictOfBests[g])
-                {
-                    Console.WriteLine($"have you seen '{movie.movie_title}'? (yes/no)");
-                    var answer = Console.ReadLine();
-                    if (answer == "yes")
-                    {
-                        Console.WriteLine("how would you rate it?");
-                        var rate = Convert.ToDouble(Console.ReadLine());
-                        var newRating = new UserRating()
-                        {
-                            movie_id = movie.movie_id,
-                            _id = "0",
-                            rating_val = (int)rate,
-                            user_id = "user123"
-                        };
-                        new_user.Add(newRating);
-                        genreCounts[g]++;
-                        count++;
-                    }
-                }
-            }
-        }
-        
+
         else
         {
             var splitted = input.Split(' ');

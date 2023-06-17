@@ -1,11 +1,11 @@
 {
   "version": 2,
-  "dgSpecHash": "yz10QsCPD7uCyjT6fYJuOEn4mk9IFXsxvX987L/8zZ3Ly9HJiYXtG3/llJIpDL9UCF50QlxfweocqF1NyVH56w==",
+  "dgSpecHash": "M8vBoqvjhuOl6nW+y4+TmM56NFyt6/c+EvB3a/6x3cwemxNJZ+ozI3rNvGzPWKmSQA6S5p3lYSnotJis+bUANQ==",
   "success": true,
-  "projectFilePath": "C:\\Users\\sofma\\Assignment_8.2\\assignment_8\\assignment_8.csproj",
+  "projectFilePath": "C:\\Users\\User\\Desktop\\Информатика\\Assignment_8\\assignment_8\\assignment_8.csproj",
   "expectedPackageFiles": [
-    "C:\\Users\\sofma\\.nuget\\packages\\csvhelper\\18.0.0\\csvhelper.18.0.0.nupkg.sha512",
-    "C:\\Users\\sofma\\.nuget\\packages\\microsoft.csharp\\4.5.0\\microsoft.csharp.4.5.0.nupkg.sha512"
+    "C:\\Users\\User\\.nuget\\packages\\csvhelper\\18.0.0\\csvhelper.18.0.0.nupkg.sha512",
+    "C:\\Users\\User\\.nuget\\packages\\microsoft.csharp\\4.5.0\\microsoft.csharp.4.5.0.nupkg.sha512"
   ],
   "logs": []
 }
