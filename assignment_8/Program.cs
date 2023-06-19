@@ -1,6 +1,5 @@
 using System.Globalization;
 using CsvHelper;
-using System.Linq;
 
 List<Movie> GetMovies(string fileName)
 {
@@ -15,19 +14,21 @@ List<Movie> GetMovies(string fileName)
 
 List<UserRating> GetUserRatings(string fileName)
 {
-    using (var reader = new StreamReader(fileName))
-    using (var csv = new CsvReader(reader, CultureInfo.InvariantCulture))
-    {
-        csv.Configuration.MissingFieldFound = null;
-        var ratings = csv.GetRecords<UserRating>();
-        return new List<UserRating>(ratings);
-    }
+    using var reader = new StreamReader(fileName);
+    using var csv = new CsvReader(reader, CultureInfo.InvariantCulture);
+    csv.Configuration.MissingFieldFound = null;
+    var ratings = csv.GetRecords<UserRating>();
+    return new List<UserRating>(ratings);
 }
 
 List<Movie> ArrangeMovies(List<Movie> listM)
 {
     foreach (var el in listM)
     {
+        if (el.vote_average == "")
+        {
+            el.vote_average = "0";
+        }
         if (el.genres == "[]")
         {
             el.genres = "NaN";
@@ -94,39 +95,6 @@ Dictionary<string, double[]> GetUserPreferences(List<UserRating> userRatings, Li
     return userPreferences;
 }
 
-void CompareUsers(Dictionary<string, double[]> new_UserPreferences, Dictionary<string, double[]> UserPreferences)
-{
-    var newUser = new_UserPreferences.Single();
-
-    int matchCount = 0;
-
-    foreach (var existingUser in UserPreferences)
-    {
-        bool isMatch = true;
-
-        for (int i = 0; i < newUser.Value.Length; i++)
-        {
-            if (Math.Abs(newUser.Value[i] - existingUser.Value[i]) >= 0.25)
-            {
-                isMatch = false;
-                break;
-            }
-        }
-
-        if (isMatch)
-        {
-            Console.WriteLine("Matching user:");
-            Console.WriteLine("User ID: " + existingUser.Key);
-            Console.WriteLine("Preferences: [" + string.Join(", ", existingUser.Value) + "]");
-            Console.WriteLine();
-            matchCount++;
-
-            if (matchCount == 3)
-                break;
-        }
-    }
-}
-
 string GetFavoriteGenre(Dictionary<string, int> genreCounts)
 {
     int maxCount = genreCounts.Values.Max();
@@ -159,21 +127,62 @@ Dictionary<string, List<Movie>> BestFromEachGenre(List<Movie> listM)
     return dictOfBest;
 }
 
-
-var listMovies = ArrangeMovies(GetMovies("movie_data.csv"));
-var userRatings = GetUserRatings("rating.csv");
-var userPreferences = GetUserPreferences(userRatings, listMovies);
-var dictOfBests = BestFromEachGenre(listMovies);
-
-
-foreach (var userId in userPreferences.Keys)
+Dictionary<string, List<Movie>> GetFilmsWatchedByUser(List<UserRating> userRatings, List<Movie> listMovies)
 {
-    Console.WriteLine(userId + ": [" + string.Join(", ", userPreferences[userId]) + "]");
+    Dictionary<string, List<Movie>> filmsWatchedByUser = new Dictionary<string, List<Movie>>();
+
+    foreach (var rating in userRatings)
+    {
+        if (!filmsWatchedByUser.TryGetValue(rating.user_id, out var movies))
+        {
+            movies = new List<Movie>();
+            filmsWatchedByUser[rating.user_id] = movies;
+        }
+
+        var movie = listMovies.FirstOrDefault(m => m.movie_id == rating.movie_id);
+        if (movie != null)
+        {
+            movies.Add(movie);
+        }
+    }
+
+    return filmsWatchedByUser;
+}
+
+void FindNotWatched(string otherUser, Dictionary<string, List<Movie>> usersWatched, List<Movie> ourUser, string favGenre)
+{
+    if (usersWatched.TryGetValue(otherUser, out var u))
+    {
+        var toWatch = u.Except(ourUser).ToList();
+        
+        Console.WriteLine($"as you like {favGenre}, we might suggest");
+        foreach (var movie in toWatch.Where(movie => movie.genres == favGenre))
+        {
+            Console.WriteLine($"{movie.movie_title}");
+        }
+        Console.WriteLine();
+    
+        Console.WriteLine("from other genres you may like");
+        var others = toWatch.Where(movie => movie.genres != favGenre).ToList();
+        foreach (var movie in others.Take(5))
+        {
+            Console.WriteLine($"{movie.movie_title}");
+        }
+    }
 }
 
 
-Recommend();
+var listMovies = ArrangeMovies(GetMovies("movie_data.csv"));
+var userRatings = GetUserRatings("rating.csv");
 
+var userPreferences = GetUserPreferences(userRatings, listMovies);
+var dictOfBests = BestFromEachGenre(listMovies);
+var watchedByUsers = GetFilmsWatchedByUser(userRatings, listMovies);
+
+var a = new KdTree();
+a.BuildTree(userPreferences);
+
+Recommend();
 
 void Recommend()
 {
@@ -182,24 +191,32 @@ void Recommend()
     List<UserRating> new_user = new List<UserRating>();
     int count = 0;
     var genreCounts = new Dictionary<string, int>(); // Хранит количество просмотренных фильмов каждого жанра
+    var watched = new List<Movie>();
     foreach (var g in genres) genreCounts[g] = 0;
     
     while (true)
     {
         Console.Write("> ");
         var input = Console.ReadLine();
-        if (input == "recommend" && count > 2)
+        if (input == "recommend")
         {
-            var new_userPreferences = GetUserPreferences(new_user, listMovies);
-            foreach (var userId in new_userPreferences.Keys)
+            if (count > 2)
             {
-                Console.WriteLine(userId + ": [" + string.Join(", ", new_userPreferences[userId]) + "]");
+                var prefs = new double[8];
+                var new_userPreferences = GetUserPreferences(new_user, listMovies);
+                foreach (var userId in new_userPreferences.Keys)
+                {
+                    //Console.WriteLine(userId + ": [" + string.Join(", ", new_userPreferences[userId]) + "]");
+                    prefs = new_userPreferences[userId];
+                }
+                var s = a.FindNearest(prefs);
+            
+                var favoriteGenre = GetFavoriteGenre(genreCounts);
+                FindNotWatched(s[0].Key, watchedByUsers, watched, favoriteGenre);
+                
+                break;
             }
-            CompareUsers(new_userPreferences, userPreferences);
-            var favoriteGenre = GetFavoriteGenre(genreCounts);
-            Console.WriteLine("Your favorite genre is: " + favoriteGenre);
-
-            break;
+            Console.WriteLine($"you need to rate {2-count} more movies to open this option");
         }
         
         // discovery 
@@ -214,17 +231,26 @@ void Recommend()
                     if (answer == "yes")
                     {
                         Console.WriteLine("how would you rate it?");
-                        var rate = Convert.ToDouble(Console.ReadLine());
-                        var newRating = new UserRating()
+                        var rate = double.Parse(Console.ReadLine().Replace(',', '.'), CultureInfo.InvariantCulture);
+                        if (rate > 10)
                         {
-                            movie_id = movie.movie_id,
-                            _id = "0",
-                            rating_val = (int)rate,
-                            user_id = "user123"
-                        };
-                        new_user.Add(newRating);
-                        genreCounts[g]++;
-                        count++;
+                            Console.WriteLine("invalid rate");
+                            rate = double.Parse(Console.ReadLine().Replace(',', '.'), CultureInfo.InvariantCulture);
+                        }
+                        else
+                        {
+                            var newRating = new UserRating()
+                            {
+                                movie_id = movie.movie_id,
+                                _id = "0",
+                                rating_val = (int)rate,
+                                user_id = "user123"
+                            };
+                            new_user.Add(newRating);
+                            genreCounts[g]++;
+                            count++;
+                            watched.Add(movie);
+                        }
                     }
                 }
             }
@@ -234,24 +260,31 @@ void Recommend()
         {
             var splitted = input.Split(' ');
             var command = splitted[0];
-            var rate = Convert.ToDouble(splitted[^1]);
-            var movie = CultureInfo.CurrentCulture.TextInfo.ToTitleCase(string.Join(" ", splitted[1..^1]));
-            var movieId = "";
-            foreach (var el in listMovies)
-            {
-                if (el.movie_title == movie)
-                {
-                    movieId = el.movie_id;
-                    break;
-                }
-            }
 
             if (command == "rate")
             {
+                var rate = double.Parse(splitted[^1].Replace(',', '.'), CultureInfo.InvariantCulture);
+                if (rate > 10)
+                {
+                    Console.WriteLine("invalid rate");
+                    rate = double.Parse(Console.ReadLine().Replace(',', '.'), CultureInfo.InvariantCulture);
+                }
+                
+                var movie = CultureInfo.CurrentCulture.TextInfo.ToTitleCase(string.Join(" ", splitted[1..^1]));
+                var movieId = "";
+                foreach (var el in listMovies)
+                {
+                    if (el.movie_title == movie)
+                    {
+                        movieId = el.movie_id;
+                        watched.Add(el);
+                        break;
+                    }
+                }
                 if (movieId == "")
                 {
                     Console.WriteLine("no such movie found :( closest candidates:");
-                    spellChecker(movie);
+                    SpellChecker(movie);
                 }
                 else
                 {
@@ -266,7 +299,6 @@ void Recommend()
                     Console.WriteLine($"> you've rated a film '{movie}' ({movieId}) as {rate}");
 
                     count++;
-                    Console.WriteLine(count);
 
                     var movieGenre = listMovies.Find(m => m.movie_id == movieId)?.genres;
                     genreCounts[movieGenre]++;
@@ -276,8 +308,7 @@ void Recommend()
     }
 }
 
-
-void spellChecker(string movieTitle)
+void SpellChecker(string movieTitle)
 {
     var distances = new Dictionary<string, int>();
     var listTitles = listMovies.Select(movie1 => movie1.movie_title).ToList();
@@ -292,7 +323,6 @@ void spellChecker(string movieTitle)
 
     Console.WriteLine(string.Join(", ", suggestions));
 }
-
 
 int DamerauLevenshteinDistance(string word1, string word2)
 {
@@ -325,7 +355,6 @@ int DamerauLevenshteinDistance(string word1, string word2)
     return matrix[w1, w2];
 }
 
-
 public class Movie
 {
     public string genres { get; set; }
@@ -340,4 +369,119 @@ public class UserRating
     public string movie_id { get; set; }
     public int rating_val { get; set; }
     public string user_id { get; set; }
+}
+
+public class Node
+{
+    public double[] Preferences { get; set; }
+    public Node LeftChild { get; set; }
+    public Node RightChild { get; set; }
+    public string User { get; set; }
+
+    public Node(string user, double[] preferences)
+    {
+        User = user;
+        Preferences = preferences;
+        LeftChild = null;
+        RightChild = null;
+    }
+}
+
+public class KdTree
+{
+    private Node Root { get; set; }
+    private const int Dimensions = 8;
+
+    public void BuildTree(Dictionary<string, double[]> preferences)
+    {
+        Root = BuildTreeRecursive(preferences, 0);
+
+    }
+
+    private Node BuildTreeRecursive(Dictionary<string, double[]> preferences, int depth)
+    {
+        if (preferences.Count == 0)
+            return null;
+
+        int axis = depth % Dimensions;
+        var sortedPreferences = preferences.OrderBy
+            (p => p.Value[axis]).ToList();
+
+        int medianIndex = sortedPreferences.Count / 2;
+        KeyValuePair<string, double[]> medianUser = sortedPreferences[medianIndex];
+        double[] medianPreferences = medianUser.Value;
+
+        Node node = new Node(medianUser.Key, medianPreferences)
+        {
+            LeftChild = BuildTreeRecursive(sortedPreferences
+                .GetRange(0, medianIndex).ToDictionary(x => x.Key,
+                    x => x.Value), depth + 1),
+            RightChild = BuildTreeRecursive(sortedPreferences
+                .GetRange(medianIndex + 1, sortedPreferences.Count - (medianIndex + 1))
+                .ToDictionary(x => x.Key, x => x.Value), depth + 1)
+        };
+
+        return node;
+    }
+
+
+    public List<KeyValuePair<string, double[]>> FindNearest(double[] targetPreferences)
+    {
+        int k = 2; // how many neighbors we want to find
+        List<KeyValuePair<string, double[]>> nearestNeighbors = new List<KeyValuePair<string, double[]>>();
+        FindNearestRecursive(Root, targetPreferences, k, 0, nearestNeighbors);
+        return nearestNeighbors;
+    }
+
+
+    private void FindNearestRecursive(Node node, double[] targetPreferences, int k, int depth,
+        List<KeyValuePair<string, double[]>> nearestNeighbors)
+    {
+        if (node == null)
+            return;
+
+        int axis = depth % Dimensions;
+        double distance = CalculateDistance(node.Preferences, targetPreferences);
+
+        if (nearestNeighbors.Count < k)
+        {
+            nearestNeighbors.Add(new KeyValuePair<string, double[]>(node.User, node.Preferences));
+        }
+        else if (distance < CalculateDistance(targetPreferences, nearestNeighbors.Last().Value))
+        {
+            nearestNeighbors.RemoveAt(nearestNeighbors.Count - 1);
+            nearestNeighbors.Add(new KeyValuePair<string, double[]>(node.User, node.Preferences));
+        }
+        else
+        {
+            return;
+        }
+
+        if (targetPreferences[axis] < node.Preferences[axis])
+        {
+            FindNearestRecursive(node.LeftChild, targetPreferences, k, depth + 1, nearestNeighbors);
+            if (CalculateDistance(targetPreferences, nearestNeighbors.Last().Value) >
+                Math.Abs(targetPreferences[axis] - node.Preferences[axis]))
+                FindNearestRecursive(node.RightChild, targetPreferences, k, depth + 1, nearestNeighbors);
+        }
+        else
+        {
+            FindNearestRecursive(node.RightChild, targetPreferences, k, depth + 1, nearestNeighbors);
+            if (CalculateDistance(targetPreferences, nearestNeighbors.Last().Value) >
+                Math.Abs(targetPreferences[axis] - node.Preferences[axis]))
+                FindNearestRecursive(node.LeftChild, targetPreferences, k, depth + 1, nearestNeighbors);
+        }
+    }
+
+    private double CalculateDistance(double[] preferences1, double[] preferences2)
+    {
+        double distance = 0;
+        for (int i = 0; i < preferences1.Length; i++)
+        {
+            double diff = preferences1[i] - preferences2[i];
+            distance += diff * diff;
+        }
+
+        return Math.Sqrt(distance);
+    }
 }
