@@ -25,36 +25,41 @@ List<UserRating> GetUserRatings(string fileName)
 
 List<Movie> ArrangeMovies(List<Movie> listM)
 {
-    foreach (var el in listM)
+    var genresRename = new Dictionary<string, string>
     {
-        if (el.genres == "[]")
+        { "Fantasy", "Fiction" },
+        { "Science Fiction", "Fiction" },
+        { "Adventure", "Action" }
+    };
+
+    var validGenres = new List<string>{ "Drama", "Comedy", "Documentary", "Fiction", "Action",
+        "Romance", "Animation", "Thriller" };
+
+    foreach (var movie in listM)
+    {
+        if (movie.genres == "[]")
         {
-            el.genres = "NaN";
+            movie.genres = "NaN";
         }
-        if (el.genres.Contains("Fantasy")) // as we should combine fantasy and sci-fi into one
+        else
         {
-            el.genres = el.genres.Replace("Fantasy", "Fiction");
-        }
-        else if (el.genres.Contains("Science Fiction"))
-        {
-            el.genres = el.genres.Replace("Science Fiction", "Fiction");
-        }
-        else if (el.genres.Contains("Adventure")) // as we should add adventure to action
-        {
-            el.genres = el.genres.Replace("Adventure", "Action");
+            foreach (var gen in genresRename)
+            {
+                if (movie.genres.Contains(gen.Key))
+                {
+                    movie.genres = movie.genres.Replace(gen.Key, gen.Value);
+                }
+            }
         }
 
-        el.genres = el.genres.Trim('[', ']', '"');
-        el.genres = el.genres.Replace('"'.ToString(), "");
-
+        movie.genres = movie.genres.Trim('[', ']', '"');
+        movie.genres = movie.genres.Replace('"'.ToString(), "");
     }
 
-    var gen = new List<string>{"Drama", "Comedy", "Documentary", "Fiction", "Action",
-        "Romance", "Animation", "Thriller"};
-
-    var shorter = listM.FindAll(movie => gen.Contains(movie.genres));
+    var shorter = listM.FindAll(movie => validGenres.Contains(movie.genres));
     return shorter;
 }
+
 
 Dictionary<string, double[]> GetUserPreferences(List<UserRating> userRatings, List<Movie> listMovies)
 {
